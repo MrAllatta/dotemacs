@@ -1,11 +1,29 @@
-(require 'package)
-(setq package-archives '(("melpa" . "https://melpa.org/packages/")
-                         ("org"   . "https://orgmode.org/elpa/")
-                         ("gnu"   . "https://elpa.gnu.org/packages/")))
-(package-initialize)
-(unless package-archive-contents
-  (package-refresh-contents))
+;; (require 'package)
+;; (setq package-archives '(("melpa" . "https://melpa.org/packages/")
+;;                         ("org"   . "https://orgmode.org/elpa/")
+;;                         ("gnu"   . "https://elpa.gnu.org/packages/")))
+;; (package-initialize)
+;; (unless package-archive-contents
+;;  (package-refresh-contents))
 
+(defvar bootstrap-version)
+(let ((bootstrap-file
+       (expand-file-name
+        "straight/repos/straight.el/bootstrap.el"
+        (or (bound-and-true-p straight-base-dir)
+            user-emacs-directory)))
+      (bootstrap-version 7))
+  (unless (file-exists-p bootstrap-file)
+    (with-current-buffer
+        (url-retrieve-synchronously
+         "https://raw.githubusercontent.com/radian-software/straight.el/develop/install.el"
+         'silent 'inhibit-cookies)
+      (goto-char (point-max))
+      (eval-print-last-sexp)))
+  (load bootstrap-file nil 'nomessage))
+
+(straight-use-package 'use-package)
+(setq straight-use-package-by-default t)
 (setenv "CC" "/bin/gcc")
 
 ;; Disable unnecessary UI elements
@@ -25,7 +43,9 @@
 ;; Sentences end with a single space instead of two
 (setq sentence-end-double-space nil)
 
-(global-set-key (kbd "C-x g") 'magit-status)
+
+(global-set-key (kbd "C-c ;") 'comment-or-uncomment-region)
+
 (global-set-key (kbd "C-c b") 'consult-buffer)
 (global-set-key (kbd "M-x") 'execute-extended-command)
 
@@ -37,15 +57,15 @@
 (global-set-key (kbd "C-c C-c") 'compile)  ;; Change compile keybinding
 
 (use-package modus-themes
-  :ensure t
+; :ensure t
   :config
-  ;; Ensure the package is fully loaded before applying theme
+;;  Ensure the package is fully loaded before applying theme
   (require 'modus-themes)
 
-  ;; Load preferred theme at startup
+;;  Load preferred theme at startup
   (modus-themes-select 'modus-operandi)
 
-  ;; Improve readability and contrast
+;;  Improve readability and contrast
   (setq modus-themes-bold-constructs t
         modus-themes-italic-constructs t
         modus-themes-mixed-fonts t
@@ -64,7 +84,7 @@
 (global-set-key (kbd "<f5>") 'toggle-modus-themes)
 
 (use-package ivy
-  :ensure t
+; :ensure t
   :init
   (ivy-mode 1)
   :config
@@ -74,7 +94,8 @@
         ivy-wrap t))
 
 (use-package consult
-  :ensure t
+					; :ensure t
+  
   :bind (("C-s" . consult-line)
          ("C-x b" . consult-buffer)
          ("M-g g" . consult-goto-line)
@@ -82,16 +103,7 @@
          ("C-c h" . consult-history)))
 
 (use-package company
-  :ensure t
-  :init
-  (global-company-mode)
-  :config
-  (setq company-minimum-prefix-length 2
-        company-idle-delay 0.1
-        company-tooltip-align-annotations t))
-
-(use-package company
-  :ensure t
+; :ensure t
   :hook (prog-mode . company-mode)
   :config
   (setq company-minimum-prefix-length 2
@@ -99,27 +111,27 @@
         company-tooltip-align-annotations t))
 
 (use-package markdown-mode
-  :ensure t
+; :ensure t
   :commands (markdown-mode gfm-mode)
   :mode (("README\\.md\\'" . gfm-mode)
          ("\\.md\\'"       . markdown-mode)
          ("\\.markdown\\'" . markdown-mode))
   :init
-  ;; Use Pandoc for markdown commands
+;;  Use Pandoc for markdown commands
   (setq markdown-command "pandoc"
-        ;; Better code block highlighting
+;;        Better code block highlighting
         markdown-fontify-code-blocks-natively t)
   :hook
-  ;; Enable soft-wrapping in markdown buffers
+;;  Enable soft-wrapping in markdown buffers
   (markdown-mode . visual-line-mode))
 
 ;; Ensure Tree-Sitter is installed and configured
 (setq treesit-language-source-alist
       '((python      "https://github.com/tree-sitter/tree-sitter-python")
         (yaml        "https://github.com/ikatyang/tree-sitter-yaml")
-					;        (latex       "https://github.com/latex-lsp/tree-sitter-latex")
+					       (latex       "https://github.com/latex-lsp/tree-sitter-latex")
         (java        "https://github.com/tree-sitter/tree-sitter-java")
-					;        (typescript  ("https://github.com/tree-sitter/tree-sitter-typescript" "master" "typescript"))
+					       (typescript  ("https://github.com/tree-sitter/tree-sitter-typescript" "master" "typescript"))
         (javascript  "https://github.com/tree-sitter/tree-sitter-javascript")
         (markdown    "https://github.com/ikatyang/tree-sitter-markdown")
         (org         "https://github.com/milisims/tree-sitter-org")))
@@ -140,11 +152,12 @@
 (setq major-mode-remap-alist
       '((python-mode        . python-ts-mode)
         (yaml-mode          . yaml-ts-mode)
-					;        (latex-mode         . latex-ts-mode)
+;	(latex-mode         . latex-ts-mode)
         (java-mode          . java-ts-mode)
-					;        (typescript-mode    . typescript-ts-mode)
+;	(typescript-mode    . typescript-ts-mode)
         (js-mode            . javascript-ts-mode)
-        (markdown-mode      . markdown-ts-mode)))
+;        (markdown-mode      . markdown-ts-mode)
+	))
 
 (use-package lsp-mode
   :commands lsp
@@ -204,18 +217,28 @@
 
 (global-set-key (kbd "C-c u") 'consult-unified-search)
 
-(use-package org
-  :bind (("C-c a" . org-agenda)   ;; Open Org-Agenda
-         ("C-c l" . org-store-link) ;; Store link
-         ("C-c c" . org-capture)   ;; Capture new note
-         ("C-c b" . org-switchb)   ;; Switch Org buffer
-         ("C-c d" . org-deadline)  ;; Set deadline
-         ("C-c s" . org-schedule)  ;; Schedule task
-         ("C-c ." . org-time-stamp) ;; Insert timestamp
-         ("C-c ," . org-priority))
-  :config
-  (setq org-agenda-files (directory-files-recursively "~/orgfiles/" "\\.org$"))) ;; Set priority
+;; (use-package org
+;;   :bind (("C-c a" . org-agenda)   Open Org-Agenda
+;;          ("C-c l" . org-store-link) Store link
+;;          ("C-c c" . org-capture)   Capture new note
+;;          ("C-c b" . org-switchb)   Switch Org buffer
+;;          ("C-c d" . org-deadline)  Set deadline
+;;          ("C-c s" . org-schedule)  Schedule task
+;;          ("C-c ." . org-time-stamp) Insert timestamp
+;;          ("C-c ," . org-priority))
+;;   :config
+;;   (setq org-agenda-files (directory-files-recursively "~/orgfiles/" "\\.org$"))))
+(global-set-key (kbd "C-c a") 'org-agenda)
+(global-set-key (kbd "C-c l") 'org-store-link)
+(global-set-key (kbd "C-c c") 'org-capture)
+(global-set-key (kbd "C-c d") 'org-deadline)
+(global-set-key (kbd "C-c s") 'org-schedule)
+(global-set-key (kbd "C-c .") 'org-time-stamp)
+(global-set-key (kbd "C-c ,") 'org-priority)
 
+;(setq org-agenda-files (directory-files-recursively "~/orgfiles/" "\\.org$"))
+
+;;  Set priority
 (setq org-capture-templates
       '(("t" "Task" entry
          (file+headline "~/orgfiles/tasks.org" "Tasks")
@@ -231,43 +254,27 @@
 
 	("a" "AI Query" entry
          (file "~/org/ai-queries.org")
-         "* %U - %^{Query}\n#+BEGIN_AI\n%?\n#+END_AI\n")))
+         "* %U - %^{Query}\n#+BEGIN_AI\n%?\n#+END_AI\n")
+
+      ("j" "Job Application" entry
+       (file+headline "~/projects/teaching-applications/applications.org" "Applications")
+       "* %^{Job Title} at %^{School}
+                 :PROPERTIES:
+                 :Submitted: %U
+                 :Follow-Up: %^t
+                 :END:
+                 - Status: %^{Status|Pending|Submitted|Interview|Offer}
+                 - Notes: %?")))
 
 (use-package org-roam
-  :ensure t
+  ; :ensure t
   :init
   (setq org-roam-directory (expand-file-name "~/orgfiles/roam/"))
   (setq org-roam-list-files-commands '(find rg))  ;; Ensure recursive search
+  (setq org-roam-dailies-directory "daily/")
 
   (unless (file-exists-p org-roam-directory)
     (make-directory org-roam-directory t))
-
-  ;; Auto-create missing files with `#+title:` metadata
-  (dolist (file '("index.org" "projects.org" "notes.org" "meetings.org"))
-    (let ((file-path (expand-file-name file org-roam-directory)))
-      (unless (file-exists-p file-path)
-        (with-temp-file file-path
-          (insert "#+title: " (capitalize (file-name-sans-extension file)) "\n"
-                  "#+OPTIONS: toc:2\n"
-                  "#+STARTUP: overview\n"
-                  "#+TOC: headlines 2\n\n"
-                  (cond
-                   ((string= file "index.org")
-                    "* Welcome to Org-Roam\nYour knowledge base starts here.\n\n"
-                    "* Topics\n"
-                    "- [[file:projects.org][Projects]]\n"
-                    "- [[file:notes.org][Notes]]\n"
-                    "- [[file:meetings.org][Meetings]]\n\n"
-                    "* Daily Notes\nCapture your daily thoughts using `C-c r d`.\n")
-
-                   ((string= file "projects.org")
-                    "* Projects\n\n** Active Projects\n- TODO Define active projects\n\n** Completed Projects\n- DONE Example Project\n")
-
-                   ((string= file "notes.org")
-                    "* Notes\n\n** General Notes\n- Add new notes here\n\n** References\n- Link important references\n")
-
-                   ((string= file "meetings.org")
-                    "* Meeting Notes\n\n** Upcoming Meetings\n- Capture agenda for future meetings\n\n** Past Meetings\n- Review past meetings\n")))))))
 
   :custom
   (org-roam-completion-everywhere t)
@@ -275,6 +282,7 @@
          ("C-c r i" . org-roam-node-insert)
          ("C-c r t" . org-roam-tag-add)
          ("C-c r d" . org-roam-dailies-capture-today)
+	 ("C-c r b" . org-roam-buffer-toggle)
 	 ("C-c r m" . org-roam-capture))
   :config
   ;; Ensure Org-Roam database syncs at startup
@@ -339,17 +347,24 @@
 
 
   	("m" "Meeting Notes" plain
-         "* MEETING with %^{Who} on %^T\n  :PROPERTIES:\n  :ID: %(org-id-new)\n  :END:\n  #+title: Meeting - %^{Who} - %<%Y-%m-%d>\n\n** Agenda\n%?\n\n** Notes\n- "
+         "** MEETING with %^{Who} on %^T\n  :PROPERTIES:\n  :ID: %(org-id-new)\n  :END:\n  #+title: Meeting - %^{Who} - %<%Y-%m-%d>\n\n** Agenda\n%?\n\n** Notes\n- "
          :target (file+olp "meetings.org" ("Meetings"))
          :unnarrowed t
          :empty-lines 1
          :prepend t
          :kill-buffer t)))
 
+(setq org-roam-dailies-capture-templates
+      '(("d" "default" entry
+         "* %?"
+         :target (file+head "%<%Y-%m-%d>.org"
+                            "#+title: %<%Y-%m-%d>\n"))))
+
 (setq org-agenda-files '("~/orgfiles/tasks.org"
                          "~/orgfiles/projects.org"
                          "~/orgfiles/meetings.org"
-			 "~/projects/teaching-applications/tracker.org"))
+			 "~/orgfiles/schedule.org"
+			 "~/projects/teaching-applications/applications.org"))
 
 (setq org-agenda-custom-commands
       '(("d" "Daily Overview"
@@ -377,6 +392,7 @@
 (require 'org)
 (require 'org-agenda)
 (require 'org-roam)
+(require 'org-roam-protocol)
 (global-set-key (kbd "C-c r f") 'org-roam-node-find) ;; Ensure Org-Roam loads
 
 (use-package org-roam
@@ -384,72 +400,176 @@
   :config (org-roam-db-autosync-mode))
 
 (use-package magit
-  :ensure t                     ; Ensure Magit is installed
+;  :ensure t                     ; Ensure Magit is installed
   :commands (magit-status       ; Defer loading until we need magit-status
              magit-init         ; Also defer loading magit-init
              magit-file-dispatch)
   :bind (("C-x g" . magit-status)  ; Keybinding for magit-status
          ("C-x M-g" . magit-status) ; Alt + g as a secondary keybinding
          ("C-x C-g" . magit-dispatch) ; Keybinding for magit-dispatch (for additional commands)
-         ("C-x C-f" . magit-file-dispatch)) ; Dispatch commands on files
+         ("C-x C-g" . magit-file-dispatch)) ; Dispatch commands on files
   :config
   ;; Set up Magit to automatically run some git commands upon initialization
   (setq magit-auto-revert-mode t)    ; Auto-refresh Magit status buffer
   (setq magit-diff-refine-hunk 'all) ; Refine diff display
-  (setq magit-completing-read-function 'magit-completing-read-default)
+ ; (setq magit-completing-read-function 'magit-completing-read-default)
   (setq magit-status-buffer-switch-function 'switch-to-buffer)
   (setq magit-diff-options '("--color=auto")) ; Add color to diffs
   (setq magit-push-always-verify nil) ; Disable push verification prompts
 
-  ;; Optional: Setup for working with remote repositories
+  ;; Optional: Setup for working with remot8/e repositories
   (setq magit-fetch-arguments '("--prune")) ; Auto prune when fetching
   
   ;; Setup for controlling diffs
   (setq magit-diff-highlight-hunk-region t) ; Highlights diff regions
 
   ;; Additional optional configurations to improve experience
-  (setq magit-log-arguments '("--graph" "--color" "--decorate" "--oneline"))
-)
+  (setq magit-log-arguments '("--graph" "--color" "--decorate" "--oneline")))
 
-;; Optional: Automatically load magit when visiting a git repo
-(add-hook 'git-commit-mode-hook
-          (lambda () (magit-mode 1)))
+;; Optional: Automatically load magit when visiting a git repo DOESN'T WORK
+;(add-hook 'git-commit-mode-hook
+;          (lambda () (magit-mode 1)))
 
 (setq gc-cons-threshold (* 50 1000 1000)) ;; Increase garbage collection threshold
 (add-hook 'emacs-startup-hook
           (lambda () (setq gc-cons-threshold (* 2 1000 1000)))) ;; Reset after startup
-(debug-on-entry 'treesit-install-language-grammar)
-
-(use-package org-ai
-  :ensure t
-  :commands (org-ai-mode org-ai-global-mode)
-  :init
-  (setq org-ai-default-max-tokens 1024) ;; Adjust token limit
-  (setq org-ai-api-key (getenv "OPENAI_API_KEY")) ;; Use environment variable for security
-  (setq org-ai-openai-api-token (getenv "OPENAI_API_KEY"))
-  :config
-  (org-ai-global-mode)) ;; Enable AI features globally
+;(debug-on-entry 'treesit-install-language-grammar)
 
 (use-package denote
-  :ensure t
+;  :ensure t
   :custom
-  (denote-directory "~/org/notes/") ;; Centralized note storage
+  (denote-directory "~/knowledge/") ;; Centralized note storage
   (denote-file-type 'org) ;; Use Org-mode for note-taking
   :bind
   (("C-c n n" . denote) ;; Create a new note
-   ("C-c n f" . denote-find-link))) ;; Find existing notes
+   ("C-c n f" . denote-find-link)
+   ("C-c n r" . denote-rename-file))) ;; Find existing notes
 
+
+
+(straight-use-package 'gptel)
+(setq gptel-api-key (getenv "OPENAI_API_KEY"))
+(setq gptel-org-branching-context t)
+(global-set-key (kbd "C-c g p" ) 'gptel)
+(global-set-key (kbd "C-c g s" ) 'gptel-send)
+(global-set-key (kbd "C-c g m" ) 'gptel-menu)
+(global-set-key (kbd "C-c S") 'gptel-stop)
+;(setf (alist-get 'org-mode gptel-prompt-prefix-alist) "@user\n")
+;(setf (alist-get 'org-mode gptel-response-prefix-alist) "@assistant\n")
 (custom-set-variables
  ;; custom-set-variables was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
- '(package-selected-packages
-   '(company consult denote ivy magit markdown-mode modus-themes org-ai
-	     org-roam)))
+ ;; '(package-selected-packages
+ ;;   '(company consult denote ivy magit markdown-mode modus-themes org-ai
+ ;; 	     org-roam))
+ )
+
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
  )
+(put 'set-goal-column 'disabled nil)
+ 
+;; Job application status functions
+(defun update-job-status (job-id new-status)
+  "Update the status of a job based on the job ID."
+  (interactive "sJob ID: \nsNew Status: ")
+  (with-current-buffer (find-file-noselect "~/projects/teaching-applications/applications.org")
+    (goto-char (point-min))
+    (when (re-search-forward (concat ":JobID: " job-id) nil t)
+      (org-entry-put (point) "Status" new-status)
+      (save-buffer))))
+
+
+;;  In each note, include sections and versioning details as specified in your framework. You can create templates using the following:
+
+(defun my-job-application-template (type)
+  "Create a job application note with specified TYPE."
+  (let ((title (read-string "Title: ")))
+    (org-roam-capture- :node (org-roam-node-create)
+                       :templates (list (list "d" "Job Application" "* TODO %?"
+                                              ":PROPERTIES:\n:Version: 1.0\n:END:\n\n** %?" 
+                                              "** Next Steps\n- \n** Feedback\n- ")))))
+
+
+(defun query-status-of-subthreads ()
+  "Query the status of subthreads 002-009 in applications.org and log updates under ** Logs."
+  (interactive)
+  (let ((org-file "~/projects/teaching-applications/applications.org") ; Update with your real file path
+        (subthread-ids '("002" "003" "004" "005" "006" "007" "008" "009"))
+        (current-date (format-time-string "%Y-%m-%d"))
+        (log-heading "** Logs")
+        (log-entry "")
+        (subthread-status nil))
+    
+    (with-current-buffer (find-file-noselect org-file)
+      (org-mode)
+      
+      (dolist (id subthread-ids)
+        (let ((subthread-name (format "Status of Thread %s" id)))
+          ;; Sending query to gptel
+          (setq subthread-status (gptel-send (concat "What is the current status of " subthread-name "?")))
+          
+          ;; Generating log entry
+          (setq log-entry (format "*** Updated log %s - %s\n%s\n\n" current-date subthread-name subthread-status))
+          
+          ;; Navigate to the Logs section
+          (goto-char (point-min))
+          (search-forward log-heading)
+          
+          ;; Insert the new log entry
+          (insert log-entry)))
+      
+      ;; Save the changes to the file
+      (save-buffer))))
+
+
+;; Here’s an Emacs Lisp (Elisp) script that extracts resume updates from an Org-mode file and formats them into a structured table. This script will:
+
+;; Parse entries under * Resume Updates
+;; Extract Version, ATS Check Status, Submission Method, Last Update Date, and Feedback
+;; Display the results in an Org table for easier review.
+
+
+(defun extract-resume-updates ()
+  "Extracts resume updates from the Org file and formats them into a structured Org table."
+  (interactive)
+  (let ((output-buffer "*Resume Updates Table*")
+        (data '()))
+    (with-current-buffer (find-file-noselect "resume_tracker.org")  ;; Change to your Org file path
+      (org-element-map (org-element-parse-buffer) 'headline
+        (lambda (hl)
+          (when (string= (org-element-property :title hl) "Resume Updates")
+            (dolist (sub (org-element-contents hl))
+              (when (eq (car sub) 'headline)
+                (let* ((version (org-element-property :title sub))
+                       (ats-check (extract-property sub "ATS Check Status"))
+                       (submission (extract-property sub "Submission Methods"))
+                       (last-update (extract-property sub "Last Update Date"))
+                       (feedback (extract-property sub "Feedback")))
+                  (push (list version ats-check submission last-update feedback) data))))))))
+    (with-current-buffer (get-buffer-create output-buffer)
+      (erase-buffer)
+      (insert "| Version | ATS Check Status | Submission Method | Last Update | Feedback |\n")
+      (insert "|---------+-----------------+-----------------+-------------+----------|\n")
+      (dolist (entry (reverse data))
+        (insert (format "| %s | %s | %s | %s | %s |\n"
+                        (nth 0 entry) (nth 1 entry) (nth 2 entry) (nth 3 entry) (nth 4 entry))))
+      (org-mode)
+      (switch-to-buffer output-buffer))))
+
+(defun extract-property (headline property)
+  "Extracts a property value from a given Org headline content."
+  (let ((content (org-element-contents headline)))
+    (catch 'result
+      (dolist (elem content)
+        (when (and (eq (car elem) 'section)
+                   (string-match (format "^*** %s: \\(.*\\)$" property)
+                                 (org-element-interpret-data elem)))
+          (throw 'result (match-string 1 (org-element-interpret-data elem)))))
+      "N/A")))  ;; Default if the property isn't found
+(put 'upcase-region 'disabled nil)
