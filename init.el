@@ -212,6 +212,17 @@
 
 (add-hook 'before-init-hook 'backup-init-file)
 
+(setenv "PATH" (concat (getenv "PATH") ":/home/teacher/.pyenv/versions/3.11.11/share/jupyter/kernels"))
+
+(setq jupyter-runtime-dir "/home/teacher/.pyenv/versions/3.11.11/share/jupyter/kernels")
+
+(use-package pyenv
+  :config
+  (setq pyenv-use-alias 't) ; Use aliases if set up in pyenv [1, 2, 4]
+  (global-pyenv-mode)) ; Enable pyenv mode globally [1, 2, 4]
+  
+
+
 (setq debug-on-error t)
 
 (defun log-emacs-errors ()
