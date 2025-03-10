@@ -43,10 +43,15 @@
 ;; Sentences end with a single space instead of two
 (setq sentence-end-double-space nil)
 
+;; Dired view human readable
+(setq dired-listing-switches "-alhA")
+
+(global-set-key (kbd "M-/") 'completion-at-point)
 
 (global-set-key (kbd "C-c ;") 'comment-or-uncomment-region)
 
 (global-set-key (kbd "C-c b") 'consult-buffer)
+
 (global-set-key (kbd "M-x") 'execute-extended-command)
 
 (global-set-key (kbd "C-x 2") 'split-window-below)
@@ -109,6 +114,7 @@
   (setq company-minimum-prefix-length 2
         company-idle-delay 0.1
         company-tooltip-align-annotations t))
+;(add-to-list 'company-backends 'company-capf)
 
 (use-package markdown-mode
 ; :ensure t
@@ -139,7 +145,7 @@
 (defun ensure-treesitter-grammars-installed ()
   "Ensure all required Tree-Sitter grammars are installed."
   (message "🔍 Tree-sitter: Checking installed grammars...")
-  (dolist (lang '(python yaml java javascript markdown org))
+  (dolist (lang '(python yaml java javascript markdown))
     (if (treesit-language-available-p lang)
         (message "✅ Tree-sitter: %s already installed." lang)
       (progn
