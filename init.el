@@ -176,6 +176,27 @@
   (setq lsp-keymap-prefix "C-c l"
         lsp-enable-symbol-highlighting t))
 
+(add-to-list 'org-structure-template-alist '("j" . "src jupyter-python :session hello :async yes :kernel python3.11-nycschools :display plain"))
+
+(use-package jupyter
+  :straight t)
+
+(org-babel-do-load-languages
+ 'org-babel-load-languages
+ '((emacs-lisp . t) ;; Other languages
+   (shell . t)
+   ;; Python & Jupyter
+   (python . t)
+   (jupyter . t)))
+
+(setq org-confirm-babel-evaluate nil)
+
+
+(defun my/jupyter-refresh-kernelspecs ()
+  "Refresh Jupyter kernelspecs"
+  (interactive)
+  (jupyter-available-kernelspecs t))
+
 (defun backup-init-file ()
   "Backup Emacs configuration before reloading."
   (let ((backup-file "~/.emacs.d/init.bak"))
