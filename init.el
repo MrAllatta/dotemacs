@@ -544,6 +544,30 @@
 (global-set-key (kbd "C-c S") 'gptel-stop)
 ;(setf (alist-get 'org-mode gptel-prompt-prefix-alist) "@user\n")
 ;(setf (alist-get 'org-mode gptel-response-prefix-alist) "@assistant\n")
+
+(use-package ace-window
+  :straight t  ; use `:ensure t` instead if you're using `use-package` without Straight
+  :bind (("M-o" . ace-window)  ; Common keybinding for ace-window
+         ("C-x o" . ace-window))  ; Override default `other-window` command
+  :config
+  ;; Optional: Customize the display style of the window ace keys
+  (setq aw-scope 'global)  ; Alternative: 'frame if you prefer to limit to one frame
+  ;; Optional: Use numbers to designate windows
+  (setq aw-dispatch-always t)
+  (setq aw-dispatch-alist
+        '((?x aw-delete-window "Delete Window")
+          (?m aw-swap-window "Swap Windows")
+          (?n aw-flip-window)
+          (?v aw-split-window-vert "Split Vertically")
+          (?b aw-split-window-horz "Split Horizontally")
+          (?i delete-other-windows "Maximize Window")
+          (?o delete-other-windows)
+          (?c aw-split-window-fair "Split Fairly")
+          (?? aw-show-dispatch-help)))
+  (ace-window-display-mode t))
+(setq aw-keys '(?a ?s ?d ?f ?g ?h ?j ?k ?l))
+
+
 (custom-set-variables
  ;; custom-set-variables was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
