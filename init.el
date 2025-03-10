@@ -236,9 +236,6 @@
           (lambda () (when debug-on-error (log-emacs-errors))))
 
 (setq use-package-always-defer t)
-(use-package ivy :defer 1 :config (ivy-mode 1))
-(use-package company :hook (prog-mode . company-mode))
-(use-package lsp-mode :hook ((python-mode . lsp) (js-mode . lsp)))
 
 (setq gc-cons-threshold (* 50 1000 1000))
 (add-hook 'emacs-startup-hook
@@ -255,17 +252,6 @@
 
 (global-set-key (kbd "C-c u") 'consult-unified-search)
 
-;; (use-package org
-;;   :bind (("C-c a" . org-agenda)   Open Org-Agenda
-;;          ("C-c l" . org-store-link) Store link
-;;          ("C-c c" . org-capture)   Capture new note
-;;          ("C-c b" . org-switchb)   Switch Org buffer
-;;          ("C-c d" . org-deadline)  Set deadline
-;;          ("C-c s" . org-schedule)  Schedule task
-;;          ("C-c ." . org-time-stamp) Insert timestamp
-;;          ("C-c ," . org-priority))
-;;   :config
-;;   (setq org-agenda-files (directory-files-recursively "~/orgfiles/" "\\.org$"))))
 (global-set-key (kbd "C-c a") 'org-agenda)
 (global-set-key (kbd "C-c l") 'org-store-link)
 (global-set-key (kbd "C-c c") 'org-capture)
@@ -275,34 +261,6 @@
 (global-set-key (kbd "C-c ,") 'org-priority)
 
 ;(setq org-agenda-files (directory-files-recursively "~/orgfiles/" "\\.org$"))
-
-;;  Set priority
-(setq org-capture-templates
-      '(("t" "Task" entry
-         (file+headline "~/orgfiles/tasks.org" "Tasks")
-         "* TODO %?\n  %U\n  %a\n")
-
-        ("n" "Note" entry
-         (file+headline "~/orgfiles/notes.org" "Notes")
-         "* %?\n  %U\n  %a\n")
-
-	("s" "Schedule a Meeting" entry
-	 (file+headline "~/orgfiles/schedule.org" "Upcoming Meetings")
-	 "* TODO Meeting with %^{Who}\n  SCHEDULED: %^T\n  %?")
-
-	("a" "AI Query" entry
-         (file "~/org/ai-queries.org")
-         "* %U - %^{Query}\n#+BEGIN_AI\n%?\n#+END_AI\n")
-
-      ("j" "Job Application" entry
-       (file+headline "~/projects/teaching-applications/applications.org" "Applications")
-       "* %^{Job Title} at %^{School}
-                 :PROPERTIES:
-                 :Submitted: %U
-                 :Follow-Up: %^t
-                 :END:
-                 - Status: %^{Status|Pending|Submitted|Interview|Offer}
-                 - Notes: %?")))
 
 (use-package org-roam
   ; :ensure t
@@ -361,18 +319,46 @@
 
 ;; Run this function after database sync to fix missing IDs
 (add-hook 'org-roam-db-sync-hook #'ensure-org-roam-files-have-ids)
+(setq org-capture-templates
+      '(("t" "Task" entry
+         (file+headline "~/orgfiles/tasks.org" "Tasks")
+         "* TODO %?\n  %U\n  %a\n")
+
+        ("n" "Note" entry
+         (file+headline "~/Dropbox/orgfiles/inbox.org" "Inbox")
+         "* %?\n  %U\n  %a\n")
+
+	("s" "Schedule a Meeting" entry
+	 (file+headline "~/orgfiles/schedule.org" "Upcoming Meetings")
+	 "* TODO Meeting with %^{Who}\n  SCHEDULED: %^T\n  %?")
+
+	("j" "Job Application" entry
+	 (file+headline "~/projects/teaching-applications/applications.org" "Applications")
+	 "* %^{Job Title} at %^{School}
+                 :PROPERTIES:
+                 :Submitted: %U
+                 :Follow-Up: %^t
+                 :END:
+                 - Status: %^{Status|Pending|Submitted|Interview|Offer}
+                 - Notes: %?")
+
+	("h" "Habit" entry
+         (file+headline "~/orgfiles/habits.org" "Habits")
+         "* TODO %?\n SCHEDULED: <%<%Y-%m-%d %a .+2d/4d>>\n :PROPERTIES:\n :STYLE: habit\n :END:\n")))
 
 (setq org-roam-capture-templates
-      '(("d" "Default" plain
+      '( ("d" "Default" plain
          "%?"
          :if-new (file+head "%<%Y-%m-%d>-${slug}.org"
                             "#+title: ${title}\n#+date: %U\n")
+         :target (file+olp "default.org" ("Defaults"))
          :unnarrowed t)
 
         ("p" "Project" plain
          "* Goals\n%?\n* Notes\n- %U\n- Related: %a\n"
          :if-new (file+head "projects/%<%Y-%m-%d>-${slug}.org"
                             "#+title: ${title}\n#+filetags: :project:\n")
+	 :target (file+olp "projects.org" ("Projects"))
          :unnarrowed t)
 	
 	("c" "CLI Command Knowledge" plain
@@ -383,14 +369,17 @@
 	 :prepend t
 	 :kill-buffer t)
 
-
   	("m" "Meeting Notes" plain
          "** MEETING with %^{Who} on %^T\n  :PROPERTIES:\n  :ID: %(org-id-new)\n  :END:\n  #+title: Meeting - %^{Who} - %<%Y-%m-%d>\n\n** Agenda\n%?\n\n** Notes\n- "
          :target (file+olp "meetings.org" ("Meetings"))
          :unnarrowed t
          :empty-lines 1
          :prepend t
-         :kill-buffer t)))
+         :kill-buffer t)
+
+	("k" "Knowledge" plain
+	 "** %^{Title} \n :PROPERTIES:\n :ID: %(org-id-new)\n :END: #+title: %^{Title}"
+	 :target (file "~/knowledge/%t.org"))))
 
 (setq org-roam-dailies-capture-templates
       '(("d" "default" entry
@@ -402,7 +391,43 @@
                          "~/orgfiles/projects.org"
                          "~/orgfiles/meetings.org"
 			 "~/orgfiles/schedule.org"
-			 "~/projects/teaching-applications/applications.org"))
+			 "~/orgfiles/habits.org"
+			 "~/projects/teaching-applications/applications/20250307T164637--tracker__applications.org"))
+
+
+;;    (key desc type match settings files)
+
+;; key      The key (one or more characters as a string) to be associated
+;;          with the command.
+;; desc     A description of the command.  When omitted or nil, a default
+;;          description is built using MATCH.
+;; type     The command type, any of the following symbols:
+;;           agenda      The daily/weekly agenda.
+;;           agenda*     Appointments for current week/day.
+;;           todo        Entries with a specific TODO keyword, in all agenda files.
+;;           search      Entries containing search words entry or headline.
+;;           tags        Tags/Property/TODO match in all agenda files.
+;;           tags-todo   Tags/P/T match in all agenda files, TODO entries only.
+;;           todo-tree   Sparse tree of specific TODO keyword in *current* file.
+;;           tags-tree   Sparse tree with all tags matches in *current* file.
+;;           occur-tree  Occur sparse tree for *current* file.
+;;           alltodo     The global TODO list.
+;;           stuck       Stuck projects.
+;;           ...         A user-defined function.
+;; match    What to search for:
+;;           - a single keyword for TODO keyword searches
+;;           - a tags/property/todo match expression for searches
+;;           - a word search expression for text searches.
+;;           - a regular expression for occur searches
+;;           For all other commands, this should be the empty string.
+;; settings  A list of option settings, similar to that in a let form, so like
+;;           this: ((opt1 val1) (opt2 val2) ...).   The values will be
+;;           evaluated at the moment of execution, so quote them when needed.
+;; files     A list of files to write the produced agenda buffer to with
+;;           the command ‘org-store-agenda-views’.
+;;           If a file name ends in ".html", an HTML version of the buffer
+;;           is written out.  If it ends in ".ps", a PostScript version is
+;;           produced.  Otherwise, only the plain text is written to the file.
 
 (setq org-agenda-custom-commands
       '(("d" "Daily Overview"
@@ -420,6 +445,22 @@
 
 (setq org-deadline-warning-days 7) ;; Show upcoming deadlines 7 days in advance
 
+(use-package org-journal)
+(require 'org-journal)
+(require 'org-tempo)
+
+
+
+(global-set-key (kbd "C-c j") 'org-journal-new-entry)
+(setq org-journal-dir "~/orgfiles/journal/")
+(setq org-journal-date-format "%A, %d %B %Y")
+(setq org-journal-file-format "%Y%m%d.org")
+(setq org-journal-file-type 'weekly)
+;; When switching from ‘daily’ to ‘weekly’, ‘monthly’, ‘yearly’, or from ‘weekly’,
+;; ‘monthly’, ‘yearly’ to ‘daily’, you need to invalidate the cache. This has
+;; currently to be done manually by calling ‘org-journal-invalidate-cache’.
+;; (org-journal-invalidate-cache)
+
 (require 'org-habit)  ;; Ensure org-habit is loaded
 (add-to-list 'org-modules 'org-habit)
 
@@ -431,11 +472,7 @@
 (require 'org-agenda)
 (require 'org-roam)
 (require 'org-roam-protocol)
-(global-set-key (kbd "C-c r f") 'org-roam-node-find) ;; Ensure Org-Roam loads
 
-(use-package org-roam
-  :defer 2 ;; Load 2 seconds after startup
-  :config (org-roam-db-autosync-mode))
 
 (use-package magit
 ;  :ensure t                     ; Ensure Magit is installed
@@ -473,17 +510,30 @@
           (lambda () (setq gc-cons-threshold (* 2 1000 1000)))) ;; Reset after startup
 ;(debug-on-entry 'treesit-install-language-grammar)
 
+
 (use-package denote
-;  :ensure t
-  :custom
-  (denote-directory "~/knowledge/") ;; Centralized note storage
-  (denote-file-type 'org) ;; Use Org-mode for note-taking
+  :ensure t
+;  :custom
+;  (denote-directory (expand-file-name "~/knowledge/")) ;; Centralized note storage
+;  (denote-file-type 'org) ;; Use Org-mode for note-taking
   :bind
   (("C-c n n" . denote) ;; Create a new note
    ("C-c n f" . denote-find-link)
    ("C-c n r" . denote-rename-file))) ;; Find existing notes
+(setq denote-directory (expand-file-name "~/knowledge/"))
+(setq denote-journal-extras-directory (expand-file-name "~/orgfiles/journal/"))
+(setq denote-file-type 'org)
+     (require 'denote-journal-extras)
 
+;; We use different ways to specify a path for demo purposes.
+(setq denote-dired-directories
+      (list denote-directory
+            (expand-file-name "~/orgfiles/")))
 
+(add-hook 'dired-mode-hook #'denote-dired-mode-in-directories)
+(global-set-key (kbd "C-c n j") 'denote-journal-extras-new-entry)
+
+(setq denote-journal-extras-title-format 'day-date-month-year)
 
 (straight-use-package 'gptel)
 (setq gptel-api-key (getenv "OPENAI_API_KEY"))
