@@ -91,14 +91,26 @@
         ivy-count-format "(%d/%d) "
         ivy-wrap t))
 
-(use-package consult
-					; :ensure t
-  
-  :bind (("C-s" . consult-line)
-         ("C-x b" . consult-buffer)
-         ("M-g g" . consult-goto-line)
-         ("M-g M-g" . consult-goto-line)
-         ("C-c h" . consult-history)))
+
+(use-package counsel
+;;  :ensure t
+  :bind (("M-x" . counsel-M-x)
+         ("C-x C-f" . counsel-find-file)
+         ("C-c b" . counsel-switch-buffer)
+;         ("C-c g" . counsel-git)
+;         ("C-c r" . counsel-rg)
+;         ("C-c s" . counsel-ag)
+;         ("C-c o" . counsel-rg)
+;         ("C-c j" . counsel-fzf)
+	 ))
+
+ (use-package consult
+;; ensure t ;; is a package.el construct
+   :bind (("C-s" . consult-line)
+  ;        ("C-x b" . consult-buffer)
+          ("M-g g" . consult-goto-line)
+          ("M-g M-g" . consult-goto-line)
+          ("C-c h" . consult-history)))
 
 (use-package company
 ; :ensure t
