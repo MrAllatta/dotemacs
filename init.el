@@ -181,7 +181,6 @@
   (setq lsp-keymap-prefix "C-c l"
         lsp-enable-symbol-highlighting t))
 
-(add-to-list 'org-structure-template-alist '("j" . "src jupyter-python :session hello :async yes :kernel python3.11-nycschools :display plain"))
 
 (use-package jupyter
   :straight t)
@@ -265,14 +264,28 @@
 (global-set-key (kbd "C-c .") 'org-time-stamp)
 (global-set-key (kbd "C-c ,") 'org-priority)
 
-;(setq org-agenda-files (directory-files-recursively "~/orgfiles/" "\\.org$"))
+
+;; KNOWLEDGE SPACE
+(require 'org-tempo)
+;; org refile targets
+;; generate org-refile-targets setq for refile targets for all files in ~/knowledge/ with :tags . "TAG"
+(setq org-refile-targets
+      '((org-agenda-files :level . 1)
+        ))
+
 
 (use-package org-roam
   ; :ensure t
   :init
-  (setq org-roam-directory (expand-file-name "~/orgfiles/roam/"))
+  (setq org-roam-directory (expand-file-name "~/knowledge/"))
+  (setq org-roam-dailies-directory "dailies/")
   (setq org-roam-list-files-commands '(find rg))  ;; Ensure recursive search
-  (setq org-roam-dailies-directory "daily/")
+
+  (setq org-roam-dailies-capture-templates
+      '(("d" "default" entry
+         "* %?"
+         :target (file+head "%<%Y-%m-%d>.org" ;; The file will be created, prescribed an ID, and head content will be inserted if the nd is newly captured.
+                            "#+title: %<%Y-%m-%d>\n"))))
 
   (unless (file-exists-p org-roam-directory)
     (make-directory org-roam-directory t))
@@ -290,17 +303,8 @@
   (org-roam-db-autosync-mode)
   (add-hook 'after-init-hook #'org-roam-db-sync)) ;; Ensure database is updated on startup
 
-(setq org-roam-extra-directories '("~/knowledge/"))
-
-(defun my-org-roam-list-files ()
-  "Return a list of all Org-Roam files in multiple directories, including subdirectories."
-  (let ((org-roam-files
-         (append
-          (org-roam--list-files-elisp org-roam-directory)
-          (org-roam--list-files-elisp (expand-file-name "~/knowledge/")))))
-    (delete-dups org-roam-files)))
-
-(advice-add 'org-roam-list-files :override #'my-org-roam-list-files)
+(require 'org-roam)
+(require 'org-roam-dailies)
 
 (defun ensure-org-roam-files-have-ids ()
   "Ensure every Org-Roam file has a #+title: property and a unique ID."
@@ -324,9 +328,10 @@
 
 ;; Run this function after database sync to fix missing IDs
 (add-hook 'org-roam-db-sync-hook #'ensure-org-roam-files-have-ids)
+(setq org-directory "~/knowledge/")
 (setq org-capture-templates
       '(("t" "Task" entry
-         (file+headline "~/orgfiles/tasks.org" "Tasks")
+         (file+headline "agenda/tasks.org" "Tasks")
          "* TODO %?\n  %U\n  %a\n")
 
         ("n" "Note" entry
@@ -334,7 +339,7 @@
          "* %?\n  %U\n  %a\n")
 
 	("s" "Schedule a Meeting" entry
-	 (file+headline "~/orgfiles/schedule.org" "Upcoming Meetings")
+	 (file+headline "agenda/schedule.org" "Upcoming Meetings")
 	 "* TODO Meeting with %^{Who}\n  SCHEDULED: %^T\n  %?")
 
 	("j" "Job Application" entry
@@ -348,7 +353,7 @@
                  - Notes: %?")
 
 	("h" "Habit" entry
-         (file+headline "~/orgfiles/habits.org" "Habits")
+         (file+headline "agenda/habits.org" "Habits")
          "* TODO %?\n SCHEDULED: <%<%Y-%m-%d %a .+2d/4d>>\n :PROPERTIES:\n :STYLE: habit\n :END:\n")))
 
 (setq org-roam-capture-templates
@@ -375,7 +380,7 @@
 	 :kill-buffer t)
 
   	("m" "Meeting Notes" plain
-         "** MEETING with %^{Who} on %^T\n  :PROPERTIES:\n  :ID: %(org-id-new)\n  :END:\n  #+title: Meeting - %^{Who} - %<%Y-%m-%d>\n\n** Agenda\n%?\n\n** Notes\n- "
+        "** MEETING with %^{Who} on %^T\n  :PROPERTIES:\n  :ID: %(org-id-new)\n  :END:\n  #+title: Meeting - %^{Who} - %<%Y-%m-%d>\n\n** Agenda\n%?\n\n** Notes\n- "
          :target (file+olp "meetings.org" ("Meetings"))
          :unnarrowed t
          :empty-lines 1
@@ -386,20 +391,14 @@
 	 "** %^{Title} \n :PROPERTIES:\n :ID: %(org-id-new)\n :END: #+title: %^{Title}"
 	 :target (file "~/knowledge/%t.org"))))
 
-(setq org-roam-dailies-capture-templates
-      '(("d" "default" entry
-         "* %?"
-         :target (file+head "%<%Y-%m-%d>.org"
-                            "#+title: %<%Y-%m-%d>\n"))))
 
-(setq org-agenda-files '("~/orgfiles/tasks.org"
-                         "~/orgfiles/projects.org"
-                         "~/orgfiles/meetings.org"
-			 "~/orgfiles/schedule.org"
-			 "~/orgfiles/habits.org"
-			 "~/projects/teaching-applications/applications/20250307T164637--tracker__applications.org"))
+;; ===========================
+;; ===      org-agenda     ===
+;; ===========================
 
+(setq org-agenda-files (directory-files-recursively "~/knowledge/agenda/" "\\.org$"))
 
+;; org-agenda-custom-commands
 ;;    (key desc type match settings files)
 
 ;; key      The key (one or more characters as a string) to be associated
@@ -450,21 +449,33 @@
 
 (setq org-deadline-warning-days 7) ;; Show upcoming deadlines 7 days in advance
 
-(use-package org-journal)
+(use-package org-journal
+  :init
+  (setq org-journal-dir "~/knowledge/journal/")
+  (setq org-journal-date-format "%A, %d %B %Y")
+  (setq org-journal-file-format "%Y%m%d.org")
+  (setq org-journal-file-type 'weekly)
+  ;; When switching from ‘daily’ to ‘weekly’, ‘monthly’, ‘yearly’, or from ‘weekly’,
+  ;; ‘monthly’, ‘yearly’ to ‘daily’, you need to invalidate the cache. This has
+  ;; currently to be done manually by calling ‘org-journal-invalidate-cache’.
+  ;; (org-journal-invalidate-cache)
+
+  :bind
+     ("C-c j" . org-journal-new-entry))
+
+;; from manual
+;; (use-package org-journal
+;;   :bind
+;;
+;;   :custom
+;;   (org-journal-date-prefix "#+title: ")
+;;   (org-journal-file-format "%Y-%m-%d.org")
+;;   (org-journal-dir "/path/to/journal/files/")
+;;   (org-journal-date-format "%A, %d %B %Y"))
 (require 'org-journal)
-(require 'org-tempo)
 
 
 
-(global-set-key (kbd "C-c j") 'org-journal-new-entry)
-(setq org-journal-dir "~/orgfiles/journal/")
-(setq org-journal-date-format "%A, %d %B %Y")
-(setq org-journal-file-format "%Y%m%d.org")
-(setq org-journal-file-type 'weekly)
-;; When switching from ‘daily’ to ‘weekly’, ‘monthly’, ‘yearly’, or from ‘weekly’,
-;; ‘monthly’, ‘yearly’ to ‘daily’, you need to invalidate the cache. This has
-;; currently to be done manually by calling ‘org-journal-invalidate-cache’.
-;; (org-journal-invalidate-cache)
 
 (require 'org-habit)  ;; Ensure org-habit is loaded
 (add-to-list 'org-modules 'org-habit)
@@ -475,8 +486,10 @@
 
 (require 'org)
 (require 'org-agenda)
-(require 'org-roam)
+
 (require 'org-roam-protocol)
+
+(add-to-list 'org-structure-template-alist '("j" . "src jupyter-python :session hello :async yes :kernel python3.11-nycschools :display plain"))
 
 
 (use-package magit
@@ -517,18 +530,16 @@
 
 
 (use-package denote
-  :ensure t
-;  :custom
-;  (denote-directory (expand-file-name "~/knowledge/")) ;; Centralized note storage
-;  (denote-file-type 'org) ;; Use Org-mode for note-taking
+					;  :ensure t
+  :init
+  (setq denote-directory (expand-file-name "~/knowledge/"))
+  (setq denote-journal-extras-directory (expand-file-name "~/knowledge/journal/"))
+  (setq denote-file-type 'org)
   :bind
   (("C-c n n" . denote) ;; Create a new note
    ("C-c n f" . denote-find-link)
    ("C-c n r" . denote-rename-file))) ;; Find existing notes
-(setq denote-directory (expand-file-name "~/knowledge/"))
-(setq denote-journal-extras-directory (expand-file-name "~/orgfiles/journal/"))
-(setq denote-file-type 'org)
-     (require 'denote-journal-extras)
+(require 'denote-journal-extras)
 
 ;; We use different ways to specify a path for demo purposes.
 (setq denote-dired-directories
