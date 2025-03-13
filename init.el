@@ -46,19 +46,12 @@
 ;; Dired view human readable
 (setq dired-listing-switches "-alhA")
 
-(global-set-key (kbd "M-/") 'completion-at-point)
-
+(global-set-key (kbd "M-/")   'completion-at-point)
 (global-set-key (kbd "C-c ;") 'comment-or-uncomment-region)
-
-(global-set-key (kbd "C-c b") 'consult-buffer)
-
-(global-set-key (kbd "M-x") 'execute-extended-command)
-
 (global-set-key (kbd "C-x 2") 'split-window-below)
 (global-set-key (kbd "C-x 3") 'split-window-right)
 (global-set-key (kbd "C-x 0") 'delete-window)
 (global-set-key (kbd "C-x 1") 'delete-other-windows)
-
 (global-set-key (kbd "C-c C-c") 'compile)  ;; Change compile keybinding
 
 (use-package modus-themes
