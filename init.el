@@ -1,3 +1,5 @@
+
+
 ;; (require 'package)
 ;; (setq package-archives '(("melpa" . "https://melpa.org/packages/")
 ;;                         ("org"   . "https://orgmode.org/elpa/")
@@ -6,6 +8,7 @@
 ;; (unless package-archive-contents
 ;;  (package-refresh-contents))
 
+;;; Code:
 (defvar bootstrap-version)
 (let ((bootstrap-file
        (expand-file-name
@@ -25,6 +28,15 @@
 (straight-use-package 'use-package)
 (setq straight-use-package-by-default t)
 (setenv "CC" "/bin/gcc")
+
+
+(use-package yaml-ts-mode
+  :mode ("\\.ya?ml\\'" . yaml-mode)
+  :config
+  (add-hook 'yaml-mode-hook
+            (lambda ()
+              (define-key yaml-mode-map "\C-m" 'newline-and-indent))))
+
 
 ;; Disable unnecessary UI elements
 (menu-bar-mode -1)
@@ -121,6 +133,38 @@
         company-tooltip-align-annotations t))
 ;(add-to-list 'company-backends 'company-capf)
 
+(use-package flycheck
+  :init
+  (global-flycheck-mode)
+  :config
+  (setq flycheck-check-syntax-automatically '(mode-enabled save))
+  (flycheck-add-mode 'javascript-eslint 'typescript-ts-mode)
+  (flycheck-add-mode 'javascript-eslint 'js2-mode)
+
+  (use-package python-mode
+    :mode ("\\.py\\'" . python-mode)
+    :hook ((python-mode . (lambda () (flycheck-mode +1)))
+           (python-ts-mode . (lambda () (flycheck-mode +1)))))
+
+
+  (use-package typescript-mode
+    :mode ("\\.ts\\'" . typescript-mode)
+    :interpreter "typescript"
+    :hook ((typescript-mode . (lambda () (flycheck-mode +1)))
+           (typescript-ts-mode . (lambda () (flycheck-mode +1)))))
+
+  )
+
+
+(use-package add-node-modules-path
+  :hook ((js2-mode . add-node-modules-path)
+	 (typscript-ts-mode . add-node-modules-path)
+	 (tsx-ts-mode . add-node-modules-path)
+	 (typescript-ts-base-mode . add-node-modules-path)
+	 (flycheck-mode . add-node-modules-path))
+  :config
+  (setq add-node-modules-path-command '("echo \"$(npm root)/.bin\"")))
+
 (use-package markdown-mode
 ; :ensure t
   :commands (markdown-mode gfm-mode)
@@ -136,13 +180,16 @@
 ;;  Enable soft-wrapping in markdown buffers
   (markdown-mode . visual-line-mode))
 
+
+
 ;; Ensure Tree-Sitter is installed and configured
 (setq treesit-language-source-alist
       '((python      "https://github.com/tree-sitter/tree-sitter-python")
         (yaml        "https://github.com/ikatyang/tree-sitter-yaml")
 					       (latex       "https://github.com/latex-lsp/tree-sitter-latex")
         (java        "https://github.com/tree-sitter/tree-sitter-java")
-					       (typescript  ("https://github.com/tree-sitter/tree-sitter-typescript" "master" "typescript"))
+        (typescript . ("https://github.com/tree-sitter/tree-sitter-typescript" "master" "typescript/src"))
+	(tsx . ("https://github.com/tree-sitter/tree-sitter-typescript" "master" "tsx/src"))
         (javascript  "https://github.com/tree-sitter/tree-sitter-javascript")
         (markdown    "https://github.com/ikatyang/tree-sitter-markdown")
         (org         "https://github.com/milisims/tree-sitter-org")))
@@ -150,7 +197,7 @@
 (defun ensure-treesitter-grammars-installed ()
   "Ensure all required Tree-Sitter grammars are installed."
   (message "🔍 Tree-sitter: Checking installed grammars...")
-  (dolist (lang '(python yaml java javascript markdown))
+  (dolist (lang '(python yaml java javascript typescript tsx markdown))
     (if (treesit-language-available-p lang)
         (message "✅ Tree-sitter: %s already installed." lang)
       (progn
@@ -165,21 +212,25 @@
         (yaml-mode          . yaml-ts-mode)
 ;	(latex-mode         . latex-ts-mode)
         (java-mode          . java-ts-mode)
-;	(typescript-mode    . typescript-ts-mode)
-        (js-mode            . javascript-ts-mode)
+	(typescript-mode    . typescript-ts-mode)
+        (js2-mode            . javascript-ts-mode)
 ;        (markdown-mode      . markdown-ts-mode)
 	))
 
 (use-package lsp-mode
-  :commands lsp
-  :hook ((python-mode . lsp)
-         (js-mode . lsp)
+  :init  (setq lsp-eslint-enable t)
+  :commands (lsp lsp-deferred)
+  :hook ((typescript-ts-mode . lsp)
+	 (python-mode . lsp)
+         (js2-mode . lsp)
          (rust-mode . lsp)
          (go-mode . lsp)
          (c-mode . lsp))
   :config
+  (setq lsp-eslint-package-manager "npm")
   (setq lsp-keymap-prefix "C-c l"
-        lsp-enable-symbol-highlighting t))
+        lsp-enable-symbol-highlighting t)
+  (add-hook 'typescript-ts-mode-hook #'lsp))
 
 
 (use-package jupyter
@@ -194,7 +245,7 @@
    (jupyter . t)))
 
 (setq org-confirm-babel-evaluate nil)
-
+(setq org-babel-python-command "python")
 
 (defun my/jupyter-refresh-kernelspecs ()
   "Refresh Jupyter kernelspecs"
@@ -269,8 +320,9 @@
 (require 'org-tempo)
 ;; org refile targets
 ;; generate org-refile-targets setq for refile targets for all files in ~/knowledge/ with :tags . "TAG"
+(setq org-refile-targets-files (directory-files-recursively "~/knowledge/" "\\.org$" nil nil)) ;; all subdirectories are descended into
 (setq org-refile-targets
-      '((org-agenda-files :level . 1)
+      '((org-refile-targets-files :maxlevel . 2)
         ))
 
 
@@ -338,9 +390,13 @@
          (file+headline "~/Dropbox/orgfiles/inbox.org" "Inbox")
          "* %?\n  %U\n  %a\n")
 
-	("s" "Schedule a Meeting" entry
+	("m" "Schedule a Meeting" entry
 	 (file+headline "agenda/schedule.org" "Upcoming Meetings")
-	 "* TODO Meeting with %^{Who}\n  SCHEDULED: %^T\n  %?")
+	 "** TODO Meeting with %^{Who}\n  SCHEDULED: %^T\n  %?")
+
+	("s" "Add scheduled item" entry
+	 (file+headline "agenda/schedule.org" "Regular Tasks")
+	 "** %^{Task}\n SCHEDULED: %^T\n %?")
 
 	("j" "Job Application" entry
 	 (file+headline "~/projects/teaching-applications/applications.org" "Applications")
@@ -359,16 +415,18 @@
 (setq org-roam-capture-templates
       '( ("d" "Default" plain
          "%?"
-         :if-new (file+head "%<%Y-%m-%d>-${slug}.org"
-                            "#+title: ${title}\n#+date: %U\n")
+;         :if-new (file+head "%<%Y-%m-%d>-${slug}.org"
+;                           "#+title: ${title}\n#+date: %U\n")
          :target (file+olp "default.org" ("Defaults"))
          :unnarrowed t)
 
-        ("p" "Project" plain
-         "* Goals\n%?\n* Notes\n- %U\n- Related: %a\n"
-         :if-new (file+head "projects/%<%Y-%m-%d>-${slug}.org"
-                            "#+title: ${title}\n#+filetags: :project:\n")
-	 :target (file+olp "projects.org" ("Projects"))
+        ("p" "Project" entry
+	 ""
+;;	 "* %{Title}\n :PROPERTIES: :ID $(org-id-get-create) :END:\n** Goals\n%?\n** Notes\n- %U\n- Related: %a\n"
+;;         :if-new (file+head "projects/%<%Y-%m-%d>-${slug}.org"
+;;                           "#+title: ${title}\n#+filetags: :project:\n")
+;;	 :target (file+olp "agenda/projects.org" ("Projects"))
+	 :target (file "agenda/projects/${slug}.org")
          :unnarrowed t)
 	
 	("c" "CLI Command Knowledge" plain
@@ -381,7 +439,7 @@
 
   	("m" "Meeting Notes" plain
         "** MEETING with %^{Who} on %^T\n  :PROPERTIES:\n  :ID: %(org-id-new)\n  :END:\n  #+title: Meeting - %^{Who} - %<%Y-%m-%d>\n\n** Agenda\n%?\n\n** Notes\n- "
-         :target (file+olp "meetings.org" ("Meetings"))
+         :target (file+olp "agenda/meetings.org" ("Meetings"))
          :unnarrowed t
          :empty-lines 1
          :prepend t
@@ -396,8 +454,9 @@
 ;; ===      org-agenda     ===
 ;; ===========================
 
-(setq org-agenda-files (directory-files-recursively "~/knowledge/agenda/" "\\.org$"))
-
+(setq org-agenda-files (directory-files-recursively "~/knowledge/agenda/" "\\.org$" nil nil))
+(setq org-agenda-include-diary t)
+(setq diary-file "~/knowledge/agenda/diary")
 ;; org-agenda-custom-commands
 ;;    (key desc type match settings files)
 
@@ -553,7 +612,7 @@
 
 (straight-use-package 'gptel)
 (setq gptel-api-key (getenv "OPENAI_API_KEY"))
-(setq gptel-org-branching-context t)
+(setq gptel-org-branching-context nil)
 (global-set-key (kbd "C-c g p" ) 'gptel)
 (global-set-key (kbd "C-c g s" ) 'gptel-send)
 (global-set-key (kbd "C-c g m" ) 'gptel-menu)
@@ -589,10 +648,10 @@
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
- ;; '(package-selected-packages
- ;;   '(company consult denote ivy magit markdown-mode modus-themes org-ai
- ;; 	     org-roam))
- )
+ '(org-agenda-files
+   '("/home/teacher/knowledge/agenda/projects/20250307T164637--teaching-application-tracker__agenda.org"
+     "/home/teacher/knowledge/agenda/projects/assignment_create_test_questions.org"
+     "/home/teacher/knowledge/agenda/20250314T172815--roadmap__enroll_housing_job_plan_relocate.org")))
 
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
@@ -701,3 +760,4 @@
           (throw 'result (match-string 1 (org-element-interpret-data elem)))))
       "N/A")))  ;; Default if the property isn't found
 (put 'upcase-region 'disabled nil)
+(put 'downcase-region 'disabled nil)
