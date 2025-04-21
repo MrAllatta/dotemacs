@@ -1,0 +1,13 @@
+.org-id-locations
+bookmarks
+emacs-errors.log
+org-roam.db
+projects
+recentf
+straight/
+tramp
+transient/
+tree-sitter/
+auto-save-list/
+eln-cache/
+url/
