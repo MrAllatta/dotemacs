@@ -1,14 +1,7 @@
-
-
-;; (require 'package)
-;; (setq package-archives '(("melpa" . "https://melpa.org/packages/")
-;;                         ("org"   . "https://orgmode.org/elpa/")
-;;                         ("gnu"   . "https://elpa.gnu.org/packages/")))
-;; (package-initialize)
-;; (unless package-archive-contents
-;;  (package-refresh-contents))
-
+;;; init.el --- configuration -*- lexical-binding: t -*-
+;;; Commentary:
 ;;; Code:
+
 (defvar bootstrap-version)
 (let ((bootstrap-file
        (expand-file-name
@@ -236,16 +229,14 @@
 (use-package jupyter
   :straight t)
 
-(org-babel-do-load-languages
- 'org-babel-load-languages
- '((emacs-lisp . t) ;; Other languages
-   (shell . t)
-   ;; Python & Jupyter
-   (python . t)
-   (jupyter . t)))
-
-(setq org-confirm-babel-evaluate nil)
-(setq org-babel-python-command "python")
+(with-eval-after-load 'org-mode
+  (org-babel-do-load-languages
+   'org-babel-load-languages
+   '((emacs-lisp . t) ;; Other languages
+     (shell . t)
+     ;; Python & Jupyter
+     (python . t)
+     (jupyter . t))))
 
 (defun my/jupyter-refresh-kernelspecs ()
   "Refresh Jupyter kernelspecs"
