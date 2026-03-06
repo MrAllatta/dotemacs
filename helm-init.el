@@ -75,7 +75,7 @@
   ("C-c p" . helm-execute-persistent-action)
   ("M-x" . helm-M-x) 
   ("C-x C-f" . helm-find-files)
-  ("C-x p b" . helm-browse-project) ; this is no Magit configuration, intentionally shadowing magit status
+  ("C-x p b" . helm-browse-project) 
   ("C-x p h" . helm-projects-history)
   :custom
   (helm-x-icons-provider 'nerd-icons)
@@ -132,13 +132,11 @@
   :defer t)
 
 ;; LLM
-(use-package gptel
-  :config
-  (setq gptel-model "claude-opus-4-6")
-  (setq gptel-backend (gptel-make-anthropic "Claude"
-			:stream t :key (exec-path-from-shell-getenv "ANTHROPIC_API_KEY")))
-  ;; considering using auth-source, but need more understanding
-  (require 'gptel-org))  ; so that gptel-org-set-properties is available
+(straight-use-package '(gptel :type git :host github :repo "karthink/gptel"))
+
+(setq gptel-backend (gptel-make-anthropic "Claude"
+		      :key #'gptel-api-key
+		      :stream t))
 
 ;; Postgres
 (use-package pg
