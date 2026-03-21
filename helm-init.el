@@ -124,13 +124,6 @@
   :hook
   (lsp-mode . lsp-ui-mode))
 
-(use-package yasnippet
-  :config
-  (yas-global-mode 1))
-
-(use-package yasnippet-snippets
-  :defer t)
-
 ;; LLM
 (straight-use-package '(gptel :type git :host github :repo "karthink/gptel"))
 
